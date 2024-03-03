@@ -2,39 +2,43 @@ import React, { useEffect, useState } from "react";
 import axios from 'axios';
 import './PokemonList.css';
 
+
 function PokemonList() {
     const [pokemonList, setPokemonList] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const Pokedex_url = 'https://pokeapi.co/api/v2/pokemon';
+    const [Pokedex_url, setPokedex_url] = useState('https://pokeapi.co/api/v2/pokemon');
+
+    const [nextUrl, setNextUrl] = useState('');
+    const [prevUrl, setPrevUrl] = useState('');
 
     async function downloadPokemons() {
-        try {
-            const response = await axios.get(Pokedex_url);
-            const pokemonResults = response.data.results;
+        setIsLoading(true);
+        const response = await axios.get(Pokedex_url);
+        const pokemonResults = response.data.results;
 
-            const pokemonResultsPromise = pokemonResults.map((pokemon) => axios.get(pokemon.url));
+        console.log(response.data);
+        setNextUrl(response.data.next);
+        setPrevUrl(response.data.previous);
 
-            const pokemonData = await axios.all(pokemonResultsPromise);
-            console.log(pokemonData);
+        const pokemonResultsPromise = pokemonResults.map((pokemon) => axios.get(pokemon.url));
 
-            setPokemonList(pokemonData.map(pokeData => ({
-                id: pokeData.data.id,
-                name: pokeData.data.name,
-                image: pokeData.data.sprites.other.dream_world.front_default,
-                types: pokeData.data.types
-            })));
+        const pokemonData = await axios.all(pokemonResultsPromise);
+        console.log(pokemonData);
 
-            setIsLoading(false);
-        } catch (error) {
-            console.error('Error fetching Pokemon data:', error);
-            setIsLoading(false);
-        }
+        setPokemonList(pokemonData.map(pokeData => ({
+            id: pokeData.data.id,
+            name: pokeData.data.name,
+            image: pokeData.data.sprites.other.dream_world.front_default,
+            types: pokeData.data.types
+        })));
+
+        setIsLoading(false);
     }
 
     useEffect(() => {
         downloadPokemons();
-    }, []);
+    }, [Pokedex_url]);
 
     return (
         <div className="pokemon-list-wrapper">
@@ -49,14 +53,14 @@ function PokemonList() {
                     ))}
             </div>
             <div className="Controls">
-      <button>prev</button>
-      <button>Next</button>
-  </div>
+                <button disabled={prevUrl == null} onClick={() => setPokedex_url(prevUrl)}>prev</button>
+                <button disabled={nextUrl == null} onClick={() => setPokedex_url(nextUrl)}>Next</button>
+            </div>
         </div>
-      
     );
 }
 
 export default PokemonList;
+
 
 
